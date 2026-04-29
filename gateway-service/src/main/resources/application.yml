@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: patient-home-service
+          uri: lb://patient-home-service
+          predicates:
+            - Path=/api/patients/**
+        - id: caregiver-scheduling-service
+          uri: lb://caregiver-scheduling-service
+          predicates:
+            - Path=/api/caregivers/**
+        - id: visit-optimization-service
+          uri: lb://visit-optimization-service
+          predicates:
+            - Path=/api/visits/**
+        - id: real-time-tracking-service
+          uri: lb://real-time-tracking-service
+          predicates:
+            - Path=/api/tracking/**
+        - id: billing-reconciliation-service
+          uri: lb://billing-reconciliation-service
+          predicates:
+            - Path=/api/billing/**
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

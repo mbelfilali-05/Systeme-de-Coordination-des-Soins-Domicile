@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soins à Domicile — Tableau de Bord</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232734;
+            --border: #2e3348;
+            --text: #e4e6ef;
+            --text2: #8b8fa7;
+            --accent: #4f8cff;
+            --accent2: #3b6fcc;
+            --green: #34d399;
+            --orange: #fb923c;
+            --red: #f87171;
+            --purple: #a78bfa;
+            --yellow: #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        /* ── Header ── */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 span { color: var(--accent); }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .status-text { color: var(--text2); font-size: 13px; }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 14px 24px;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* ── Content ── */
+        .content { padding: 24px 32px; }
+
+        /* ── Cards Grid ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .stat-card .label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+        .stat-card .value.blue { color: var(--accent); }
+        .stat-card .value.green { color: var(--green); }
+        .stat-card .value.orange { color: var(--orange); }
+        .stat-card .value.red { color: var(--red); }
+
+        /* ── Table ── */
+        .table-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-header h2 { font-size: 16px; font-weight: 600; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text2);
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+        }
+        td {
+            padding: 14px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--surface2); }
+
+        /* ── Badges ── */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-critique { background: rgba(248,113,113,0.15); color: var(--red); }
+        .badge-urgent { background: rgba(251,146,60,0.15); color: var(--orange); }
+        .badge-normal { background: rgba(79,140,255,0.15); color: var(--accent); }
+        .badge-faible { background: rgba(52,211,153,0.15); color: var(--green); }
+        .badge-infirmier { background: rgba(79,140,255,0.15); color: var(--accent); }
+        .badge-aide_soignant { background: rgba(167,139,250,0.15); color: var(--purple); }
+        .badge-kinesitherapeute { background: rgba(251,191,36,0.15); color: var(--yellow); }
+        .badge-disponible { background: rgba(52,211,153,0.15); color: var(--green); }
+        .badge-indisponible { background: rgba(248,113,113,0.15); color: var(--red); }
+        .badge-payee { background: rgba(52,211,153,0.15); color: var(--green); }
+        .badge-en_attente { background: rgba(251,146,60,0.15); color: var(--orange); }
+        .badge-validee { background: rgba(79,140,255,0.15); color: var(--accent); }
+
+        /* ── Optimization Section ── */
+        .opti-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .opti-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .opti-panel h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--accent); }
+
+        .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .checkbox-item:hover { border-color: var(--accent); }
+        .checkbox-item input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 16px; height: 16px;
+        }
+        .checkbox-item .name { font-weight: 500; }
+        .checkbox-item .detail { font-size: 12px; color: var(--text2); }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--accent2); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Results ── */
+        .result-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text2);
+        }
+        .result-empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+        .result-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .result-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--surface2);
+            border-radius: 8px;
+        }
+        .result-stat .num { font-size: 24px; font-weight: 700; color: var(--accent); }
+        .result-stat .lbl { font-size: 11px; color: var(--text2); text-transform: uppercase; margin-top: 4px; }
+
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item {
+            position: relative;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: var(--surface2);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 18px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 2px solid var(--bg);
+        }
+        .timeline-item .order {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .timeline-item .patient-name { font-weight: 600; font-size: 15px; margin: 4px 0; }
+        .timeline-item .meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text2);
+        }
+        .timeline-item .meta span { display: flex; align-items: center; gap: 4px; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text2);
+        }
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hidden { display: none; }
+
+        /* ── Tracking ── */
+        .tracking-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .tracking-form .full { grid-column: 1 / -1; }
+
+        @media (max-width: 768px) {
+            .opti-container { grid-template-columns: 1fr; }
+            .content { padding: 16px; }
+            .tabs { padding: 0 16px; }
+            .header { padding: 12px 16px; }
+            .tracking-form { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 <span>Soins</span>Domicile</h1>
+        <div class="header-right">
+            <div class="status-dot"></div>
+            <span class="status-text" id="serviceCount">Chargement...</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('patients')">👤 Patients</div>
+        <div class="tab" onclick="showTab('caregivers')">🩺 Soignants</div>
+        <div class="tab" onclick="showTab('optimization')">🗺️ Optimisation</div>
+        <div class="tab" onclick="showTab('tracking')">📍 Tracking</div>
+        <div class="tab" onclick="showTab('billing')">💰 Facturation</div>
+    </div>
+
+    <!-- ═══════ PATIENTS ═══════ -->
+    <div class="content" id="tab-patients">
+        <div class="stats-grid" id="patient-stats"></div>
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Liste des patients</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Adresse</th>
+                        <th>Besoins</th>
+                        <th>Urgence</th>
+                        <th>Téléphone</th>
+                    </tr>
+                </thead>
+                <tbody id="patients-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════ CAREGIVERS ═══════ -->
+    <div class="content hidden" id="tab-caregivers">
+        <div class="stats-grid" id="caregiver-stats"></div>
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Liste des soignants</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Spécialité</th>
+                        <th>Zone</th>
+                        <th>Capacité/jour</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="caregivers-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════ OPTIMIZATION ═══════ -->
+    <div class="content hidden" id="tab-optimization">
+        <div class="opti-container">
+            <div class="opti-panel">
+                <h2>⚙️ Paramètres de la tournée</h2>
+                <div class="form-group">
+                    <label>Soignant</label>
+                    <select id="caregiver-select">
+                        <option value="">Chargement...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Patients à visiter</label>
+                    <div class="checkbox-list" id="patient-checkboxes">
+                        <div style="color:var(--text2); font-size:14px;">Chargement...</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btn-optimize" onclick="runOptimization()">
+                    🚀 Lancer l'optimisation
+                </button>
+            </div>
+            <div class="opti-panel">
+                <h2>📊 Résultat de la tournée</h2>
+                <div id="opti-result">
+                    <div class="result-empty">
+                        <div class="icon">🗺️</div>
+                        <div>Sélectionnez un soignant et des patients,<br>puis lancez l'optimisation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ TRACKING ═══════ -->
+    <div class="content hidden" id="tab-tracking">
+        <div class="opti-container">
+            <div class="opti-panel">
+                <h2>📝 Enregistrer un événement</h2>
+                <div class="tracking-form">
+                    <div class="form-group">
+                        <label>ID Visite</label>
+                        <input type="text" id="track-visit" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>ID Soignant</label>
+                        <input type="text" id="track-caregiver" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>ID Patient</label>
+                        <input type="text" id="track-patient" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Type d'événement</label>
+                        <select id="track-event">
+                            <option value="DEPART">🚗 Départ</option>
+                            <option value="EN_ROUTE">🛣️ En route</option>
+                            <option value="ARRIVEE" selected>📍 Arrivée</option>
+                            <option value="DEBUT_SOIN">💉 Début soin</option>
+                            <option value="FIN_SOIN">✅ Fin soin</option>
+                            <option value="RETARD">⏰ Retard</option>
+                            <option value="INCIDENT">⚠️ Incident</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label>Détails</label>
+                        <input type="text" id="track-details" value="Arrivée chez le patient">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="sendTrackingEvent()">📤 Enregistrer</button>
+            </div>
+            <div class="opti-panel">
+                <h2>📋 Historique des événements</h2>
+                <div id="tracking-list">
+                    <div class="result-empty">
+                        <div class="icon">📍</div>
+                        <div>Aucun événement enregistré</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ BILLING ═══════ -->
+    <div class="content hidden" id="tab-billing">
+        <div class="stats-grid" id="billing-stats"></div>
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Factures</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° Facture</th>
+                        <th>Patient</th>
+                        <th>Soignant</th>
+                        <th>Type soin</th>
+                        <th>Montant TTC</th>
+                        <th>Part Assurance</th>
+                        <th>Reste Patient</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="billing-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // ── Config ──
+    const API = {
+        patients: 'http://localhost:8081/api/patients',
+        caregivers: 'http://localhost:8082/api/caregivers',
+        optimize: 'http://localhost:8083/api/visits/optimize',
+        tracking: 'http://localhost:8086/api/tracking',
+        billing: 'http://localhost:8085/api/billing',
+        billingStats: 'http://localhost:8085/api/billing/stats'
+    };
+
+    let patientsData = [];
+    let caregiversData = [];
+
+    // ── Tab Navigation ──
+    function showTab(name) {
+        document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.remove('hidden');
+        event.target.classList.add('active');
+
+        if (name === 'patients') loadPatients();
+        if (name === 'caregivers') loadCaregivers();
+        if (name === 'optimization') loadOptimizationForm();
+        if (name === 'tracking') loadTrackingEvents();
+        if (name === 'billing') loadBilling();
+    }
+
+    // ── Patients ──
+    async function loadPatients() {
+        try {
+            const res = await fetch(API.patients);
+            patientsData = await res.json();
+
+            const urgent = patientsData.filter(p => p.niveauUrgence === 'URGENT' || p.niveauUrgence === 'CRITIQUE').length;
+            document.getElementById('patient-stats').innerHTML = `
+                <div class="stat-card"><div class="label">Total patients</div><div class="value blue">${patientsData.length}</div></div>
+                <div class="stat-card"><div class="label">Urgents / Critiques</div><div class="value red">${urgent}</div></div>
+                <div class="stat-card"><div class="label">Normaux</div><div class="value green">${patientsData.filter(p => p.niveauUrgence === 'NORMAL').length}</div></div>
+                <div class="stat-card"><div class="label">Faibles</div><div class="value orange">${patientsData.filter(p => p.niveauUrgence === 'FAIBLE').length}</div></div>
+            `;
+
+            document.getElementById('patients-body').innerHTML = patientsData.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td><strong>${p.nom} ${p.prenom}</strong></td>
+                    <td>${p.adresse}</td>
+                    <td style="max-width:250px; font-size:13px; color:var(--text2)">${p.besoins || '-'}</td>
+                    <td><span class="badge badge-${p.niveauUrgence.toLowerCase()}">${p.niveauUrgence}</span></td>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:13px">${p.telephone || '-'}</td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            document.getElementById('patients-body').innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px">❌ Impossible de se connecter au service patient (port 8081)</td></tr>';
+        }
+    }
+
+    // ── Caregivers ──
+    async function loadCaregivers() {
+        try {
+            const res = await fetch(API.caregivers);
+            caregiversData = await res.json();
+
+            const dispo = caregiversData.filter(c => c.disponible).length;
+            document.getElementById('caregiver-stats').innerHTML = `
+                <div class="stat-card"><div class="label">Total soignants</div><div class="value blue">${caregiversData.length}</div></div>
+                <div class="stat-card"><div class="label">Disponibles</div><div class="value green">${dispo}</div></div>
+                <div class="stat-card"><div class="label">Infirmiers</div><div class="value orange">${caregiversData.filter(c => c.specialite === 'INFIRMIER').length}</div></div>
+                <div class="stat-card"><div class="label">Kinés</div><div class="value purple">${caregiversData.filter(c => c.specialite === 'KINESITHERAPEUTE').length}</div></div>
+            `;
+
+            document.getElementById('caregivers-body').innerHTML = caregiversData.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td><strong>${c.nom} ${c.prenom}</strong></td>
+                    <td><span class="badge badge-${c.specialite.toLowerCase()}">${c.specialite.replace('_', ' ')}</span></td>
+                    <td>${c.zoneCouverture || '-'}</td>
+                    <td>${c.capaciteJournaliere} visites</td>
+                    <td><span class="badge ${c.disponible ? 'badge-disponible' : 'badge-indisponible'}">${c.disponible ? 'Disponible' : 'Indisponible'}</span></td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            document.getElementById('caregivers-body').innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px">❌ Impossible de se connecter au service soignant (port 8082)</td></tr>';
+        }
+    }
+
+    // ── Optimization ──
+    async function loadOptimizationForm() {
+        try {
+            if (caregiversData.length === 0) {
+                const res = await fetch(API.caregivers);
+                caregiversData = await res.json();
+            }
+            if (patientsData.length === 0) {
+                const res = await fetch(API.patients);
+                patientsData = await res.json();
+            }
+
+            document.getElementById('caregiver-select').innerHTML = caregiversData
+                .filter(c => c.disponible)
+                .map(c => `<option value="${c.id}" data-lat="${c.latitudeBase}" data-lon="${c.longitudeBase}">${c.nom} ${c.prenom} — ${c.specialite}</option>`)
+                .join('');
+
+            document.getElementById('patient-checkboxes').innerHTML = patientsData.map(p => `
+                <label class="checkbox-item">
+                    <input type="checkbox" value="${p.id}" checked>
+                    <div>
+                        <div class="name">${p.nom} ${p.prenom}</div>
+                        <div class="detail">${p.adresse} · <span class="badge badge-${p.niveauUrgence.toLowerCase()}" style="font-size:10px">${p.niveauUrgence}</span></div>
+                    </div>
+                </label>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function runOptimization() {
+        const btn = document.getElementById('btn-optimize');
+        const resultDiv = document.getElementById('opti-result');
+        const select = document.getElementById('caregiver-select');
+        const selectedOption = select.options[select.selectedIndex];
+
+        const caregiver = caregiversData.find(c => c.id == select.value);
+        if (!caregiver) { alert('Sélectionnez un soignant'); return; }
+
+        const checkedPatients = [...document.querySelectorAll('#patient-checkboxes input:checked')]
+            .map(cb => patientsData.find(p => p.id == cb.value))
+            .filter(Boolean);
+
+        if (checkedPatients.length === 0) { alert('Sélectionnez au moins un patient'); return; }
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Calcul en cours...';
+        resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Optimisation de la tournée en cours...</div>';
+
+        const body = {
+            caregiverId: caregiver.id,
+            caregiverNom: caregiver.nom + ' ' + caregiver.prenom,
+            caregiverLatitude: caregiver.latitudeBase,
+            caregiverLongitude: caregiver.longitudeBase,
+            date: new Date().toISOString().split('T')[0],
+            patients: checkedPatients.map(p => ({
+                patientId: p.id,
+                patientNom: p.nom + ' ' + p.prenom,
+                latitude: p.latitude,
+                longitude: p.longitude,
+                typeSoin: p.besoins ? p.besoins.split(',')[0] : 'Soins',
+                dureeSoinMinutes: 30
+            }))
+        };
+
+        try {
+            const res = await fetch(API.optimize, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+
+            resultDiv.innerHTML = `
+                <div class="result-summary">
+                    <div class="result-stat">
+                        <div class="num">${data.nombreVisites}</div>
+                        <div class="lbl">Visites</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="num">${data.distanceTotaleKm} km</div>
+                        <div class="lbl">Distance totale</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="num">${Math.floor(data.dureeEstimeeTotaleMinutes/60)}h${String(data.dureeEstimeeTotaleMinutes%60).padStart(2,'0')}</div>
+                        <div class="lbl">Durée estimée</div>
+                    </div>
+                </div>
+                <div class="timeline">
+                    ${data.tournee.map(t => `
+                        <div class="timeline-item">
+                            <div class="order">ÉTAPE ${t.ordre}</div>
+                            <div class="patient-name">${t.patientNom}</div>
+                            <div class="meta">
+                                <span>🕐 ${t.heureEstimeeArrivee}</span>
+                                <span>📏 ${t.distanceDepuisPrecedentKm} km</span>
+                                <span>💉 ${t.typeSoin}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } catch (e) {
+            resultDiv.innerHTML = '<div class="result-empty" style="color:var(--red)">❌ Erreur de connexion au service d\'optimisation (port 8083)</div>';
+        }
+
+        btn.disabled = false;
+        btn.textContent = '🚀 Lancer l\'optimisation';
+    }
+
+    // ── Tracking ──
+    async function sendTrackingEvent() {
+        const body = {
+            visitId: parseInt(document.getElementById('track-visit').value),
+            caregiverId: parseInt(document.getElementById('track-caregiver').value),
+            patientId: parseInt(document.getElementById('track-patient').value),
+            eventType: document.getElementById('track-event').value,
+            latitude: 34.0209,
+            longitude: -6.8416,
+            details: document.getElementById('track-details').value
+        };
+
+        try {
+            await fetch(API.tracking, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            loadTrackingEvents();
+        } catch (e) {
+            alert('Erreur de connexion au service tracking');
+        }
+    }
+
+    async function loadTrackingEvents() {
+        try {
+            const res = await fetch(API.tracking);
+            const events = await res.json();
+
+            if (events.length === 0) {
+                document.getElementById('tracking-list').innerHTML = '<div class="result-empty"><div class="icon">📍</div><div>Aucun événement enregistré.<br>Utilisez le formulaire pour en créer.</div></div>';
+                return;
+            }
+
+            const icons = { DEPART:'🚗', EN_ROUTE:'🛣️', ARRIVEE:'📍', DEBUT_SOIN:'💉', FIN_SOIN:'✅', RETARD:'⏰', INCIDENT:'⚠️' };
+
+            document.getElementById('tracking-list').innerHTML = '<div class="timeline">' + events.map(e => `
+                <div class="timeline-item" style="border-left-color: ${e.eventType === 'INCIDENT' ? 'var(--red)' : e.eventType === 'RETARD' ? 'var(--orange)' : 'var(--accent)'}">
+                    <div class="order">${icons[e.eventType] || '📌'} ${e.eventType}</div>
+                    <div class="patient-name">${e.details || 'Événement'}</div>
+                    <div class="meta">
+                        <span>👤 Patient #${e.patientId}</span>
+                        <span>🩺 Soignant #${e.caregiverId}</span>
+                        <span>🕐 ${e.timestamp ? new Date(e.timestamp).toLocaleTimeString('fr-FR') : '-'}</span>
+                    </div>
+                </div>
+            `).join('') + '</div>';
+        } catch (e) {
+            document.getElementById('tracking-list').innerHTML = '<div class="result-empty" style="color:var(--red)">❌ Service tracking non disponible</div>';
+        }
+    }
+
+    // ── Billing ──
+    async function loadBilling() {
+        try {
+            const [statsRes, billsRes] = await Promise.all([
+                fetch(API.billingStats),
+                fetch(API.billing)
+            ]);
+            const stats = await statsRes.json();
+            const bills = await billsRes.json();
+
+            document.getElementById('billing-stats').innerHTML = `
+                <div class="stat-card"><div class="label">Total factures</div><div class="value blue">${stats.totalFactures}</div></div>
+                <div class="stat-card"><div class="label">Revenu payé</div><div class="value green">${stats.revenuTotal || 0} DH</div></div>
+                <div class="stat-card"><div class="label">En attente</div><div class="value orange">${stats.montantEnAttente || 0} DH</div></div>
+                <div class="stat-card"><div class="label">Factures payées</div><div class="value green">${stats.facturesPayees}</div></div>
+            `;
+
+            document.getElementById('billing-body').innerHTML = bills.map(b => `
+                <tr>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:13px">${b.numeroFacture}</td>
+                    <td>${b.patientNom || '-'}</td>
+                    <td>${b.caregiverNom || '-'}</td>
+                    <td>${b.typeSoin || '-'}</td>
+                    <td><strong>${b.montantTTC} DH</strong></td>
+                    <td style="color:var(--green)">${b.partAssurance || 0} DH</td>
+                    <td style="color:var(--orange)">${b.partPatient || 0} DH</td>
+                    <td><span class="badge badge-${b.statut.toLowerCase()}">${b.statut.replace('_', ' ')}</span></td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            document.getElementById('billing-body').innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--red); padding:24px">❌ Service facturation non disponible</td></tr>';
+        }
+    }
+
+    // ── Init ──
+    async function init() {
+        loadPatients();
+        try {
+            let count = 0;
+            const checks = [
+                fetch(API.patients).then(() => count++).catch(() => {}),
+                fetch(API.caregivers).then(() => count++).catch(() => {}),
+                fetch(API.optimize.replace('/optimize','')).then(() => count++).catch(() => {}),
+                fetch(API.tracking).then(() => count++).catch(() => {}),
+                fetch(API.billing).then(() => count++).catch(() => {})
+            ];
+            await Promise.all(checks);
+            document.getElementById('serviceCount').textContent = `${count}/5 services actifs`;
+        } catch (e) {}
+    }
+
+    init();
+</script>
+</body>
+</html>

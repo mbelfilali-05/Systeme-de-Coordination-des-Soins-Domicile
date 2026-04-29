@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # ==================== Service de découverte ====================
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - soins-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ==================== API Gateway ====================
+  gateway-service:
+    build: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+  # ==================== Patient Home Service ====================
+  patient-home-service:
+    build: ./patient-home-service
+    container_name: patient-home-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+  # ==================== Caregiver Scheduling Service ====================
+  caregiver-scheduling-service:
+    build: ./caregiver-scheduling-service
+    container_name: caregiver-scheduling-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+  # ==================== Visit Optimization Service ====================
+  visit-optimization-service:
+    build: ./visit-optimization-service
+    container_name: visit-optimization-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+  # ==================== Real-Time Tracking Service ====================
+  real-time-tracking-service:
+    build: ./real-time-tracking-service
+    container_name: real-time-tracking-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+  # ==================== Billing Reconciliation Service ====================
+  billing-reconciliation-service:
+    build: ./billing-reconciliation-service
+    container_name: billing-reconciliation-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - soins-network
+
+networks:
+  soins-network:
+    driver: bridge
